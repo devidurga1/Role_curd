@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@include('layouts.sidebar')
 @section('content')
 
 <h3>Users detail</h3>
@@ -18,13 +19,12 @@
         <p>{{ $user->image }}</p>
         <img src="/images/{{ $user->image }}" width="300px">
     </div>
-
-
     <div class="col-sm-4">
         <label>Roles</label>
         <p>@foreach( $user->roles as $role )
-        {{ $role->name }} {{ !$loop->last ? ',' : ''}}
-        @endforeach</p>
+            {{ $role->name }} {{ !$loop->last ? ',' : ''}}
+            @endforeach
+        </p>
     </div>
 </div>
 

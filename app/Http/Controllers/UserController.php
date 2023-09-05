@@ -4,17 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Permission;
+
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    
-    public function __construct() {
-        $this->middleware('is_admin', ['except' => [
+    function __construct()
+    {
+         $this->middleware('permission:user-list|user-create|user-edit|user-delete', ['only' => ['index','show']]);
+         $this->middleware('permission:user-create', ['only' => ['create','store']]);
+         $this->middleware('permission:user-edit', ['only' => ['edit','update']]);
+         $this->middleware('permission:user-delete', ['only' => ['destroy']]);
+    }
+
+    public function __construct1()
+    {
+        $this->middleware('roles', ['except' => [
             'create'
         ]]);
     }
-    
+
     /**
      * Display a listing of the resource.
      *
@@ -23,8 +34,7 @@ class UserController extends Controller
     public function index()
     {
         $users = User::latest()->get();
-        return view('users.index',['users'=>$users]);
-        
+        return view('users.index', ['users' => $users]);
     }
 
     /**
@@ -35,7 +45,7 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::all();
-        return view('users.create',['roles'=>$roles]);
+        return view('users.create', ['roles' => $roles]);
     }
 
     /**
@@ -46,27 +56,43 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        //dd('is_admin');
         $request->validate([
-            'name'=>'required|string|max:255',
-            'email'=>'required|email|unique:users,email',
-            'password'=> 'required|string|min:5',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-             'roles' => 'required|array'
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:200',
+            'roles' => 'required|array'
         ]);
 
-           
         $input = $request->all();
-  
+
         if ($image = $request->file('image')) {
             $destinationPath = 'images/';
             $profileImage = date('YmdHis') . "." . $image->getClientOriginalExtension();
             $image->move($destinationPath, $profileImage);
             $input['image'] = "$profileImage";
         }
+        /*DB::beginTransaction();
+        $user = User::create($input);
+        // dd($request->input('roles'));
+        $roles = [];
+        foreach($request->roles as $role)
+        {
+            $roles[] = [
+                'role_id' => $role,
+            ];
+        }
 
+        // dd($roles);
+
+        $user->userRoles()->createMany($roles);
+        DB::commit();
+        */
         $user = User::create($input);
         $user->roles()->attach($request->input('roles'));
-        return redirect()->route('users.index')->with('success','User create successfully');
+
+        return redirect()->route('users.index')->with('success', 'User create successfully');
     }
 
     /**
@@ -77,7 +103,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        return view('users.show',['user'=>$user]);
+        return view('users.show', ['user' => $user]);
     }
 
     /**
@@ -89,7 +115,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles = Role::all();
-        return view('users.edit',['user'=>$user, 'roles'=>$roles]);
+        return view('users.edit', ['user' => $user, 'roles' => $roles]);
     }
 
     /**
@@ -103,25 +129,27 @@ class UserController extends Controller
     {
         //dd($request->all());
         $request->validate([
-            'name'=>'required|string|max:255',
-            'email'=>'required|email|unique:users,email,'.$user->id,
-           // 'password'=> 'required|string|min:5',
-             'roles' => 'required|array'
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            //'is_admin'=>'required|boolean',
+
+           // 'password' => 'required|string|min:6',
+            'roles' => 'required|array'
         ]);
 
         $input = $request->all();
-  
+
         if ($image = $request->file('image')) {
             $destinationPath = 'images/';
             $profileImage = date('YmdHis') . "." . $image->getClientOriginalExtension();
             $image->move($destinationPath, $profileImage);
             $input['image'] = "$profileImage";
-        }else{
+        } else {
             unset($input['image']);
         }
-         $user->update($input);
+        $user->update($input);
         $user->roles()->sync($request->input('roles'));
-        return redirect()->route('users.index')->with('success','User update successfully');
+        return redirect()->route('users.index')->with('success', 'User update successfully');
     }
 
     /**
@@ -134,6 +162,6 @@ class UserController extends Controller
     {
         $user->roles()->detach();
         $user->delete();
-        return redirect()->route('users.index')->with('success','User delete successfully');
+        return redirect()->route('users.index')->with('success', 'User delete successfully');
     }
 }
