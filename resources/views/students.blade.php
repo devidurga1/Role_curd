@@ -16,7 +16,7 @@
 
 
 
-    <div class="form-group">
+  {{--  <div class="form-group">
         <label for="name">Name:</label>
         <input type="text" class="form-control" id="name" name="name">
     </div>
@@ -26,12 +26,24 @@
         <input type="text" class="form-control" id="email" name="email">
     </div>
     
-    <button id="filter" class="btn btn-primary">Apply Filters</button>
+    <button id="filter" class="btn btn-primary">Apply Filters</button>--}}
     
 <div class="container">
     <h1>Laravel Datatables <br/></h1>
+    <form>
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <input type="text" class="form-control" id="name" name="name">
+    </div>
+    
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="text" class="form-control" id="email" name="email">
+    </div>
+    </form>
+    
     <table id="students-table"  class="table table-bordered data-table">
-        <thead>
+            <thead>
             <tr>
                 <th>No</th>
                 <th>Name</th>
@@ -47,20 +59,28 @@
 </body>
    
 <script type="text/javascript">
-  $(function () {
-    
-    var table = $('.data-table').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: "{{ route('students.index') }}",
-        columns: [
-            {data: 'id', name: 'id'},
-            {data: 'name', name: 'name'},
-            {data: 'email', name: 'email'},
-            {data: 'action', name: 'action', orderable: false, searchable: false},
-        ]
+  
+  $(document).ready(function() {
+        var dataTable = $('#students-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '{{ route('students.index') }}',
+                data: function(d) {
+                    d.name = $('#name').val();
+                    d.email = $('#email').val();
+                }
+            },
+            columns: [
+                { data: 'id', name: 'id' },
+                { data: 'name', name: 'name' },
+                { data: 'email', name: 'email' },
+            ]
+        });
+
+        $('#name, #email').on('keyup', function() {
+            dataTable.ajax.reload();
+        });
     });
-    
-  });
 </script>
 </html>

@@ -69,6 +69,7 @@ class UserController extends Controller
 
     // Query to fetch users with filtering
     $users = User::query();
+    $users->with(['roles']);
 
     if (!empty($name)) {
         $users->where('name', 'LIKE', '%' . $name . '%');
